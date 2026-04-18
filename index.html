@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Nims PNG to WEBP Converter</title>
+  <title>Let's Convert!</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <style>
     body {
@@ -12,34 +12,82 @@
       margin: 0;
       padding: 0;
       text-align: center;
+      color: #333;
     }
 
     header {
-      background-color: #4caf50;
+      background-color: #0d47a1;
       color: white;
       padding: 1.5em 0;
       font-size: 2em;
       font-weight: bold;
     }
 
+    #top-container {
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      gap: 20px;
+      width: 90%;
+      max-width: 1000px;
+      margin: 2em auto;
+    }
+
     #drop-area {
-      border: 3px dashed #4caf50;
+      flex: 2;
+      border: 3px dashed #0d47a1;
       border-radius: 15px;
       background: #ffffff;
-      width: 90%;
-      max-width: 700px;
-      margin: 2em auto;
       padding: 2em;
       transition: 0.3s;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
     }
 
     #drop-area.highlight {
-      border-color: #2e7d32;
-      background-color: #f0fff0;
+      border-color: #1565c0;
+      background-color: #e3f2fd;
+    }
+
+    #global-controls {
+      flex: 1;
+      border: 2px solid #ccc;
+      border-radius: 15px;
+      background: #ffffff;
+      padding: 1.5em;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .control-group label {
+      font-size: 0.9em;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #0d47a1;
+    }
+
+    .control-group input[type="range"],
+    .control-group select {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.9em;
+      cursor: pointer;
     }
 
     .button {
-      background-color: #4caf50;
+      background-color: #0d47a1;
       border: none;
       border-radius: 8px;
       color: white;
@@ -50,12 +98,12 @@
     }
 
     .button:hover {
-      background-color: #388e3c;
+      background-color: #1565c0;
     }
 
     #gallery {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 20px;
       padding: 2em;
       max-width: 1200px;
@@ -66,37 +114,90 @@
       background: #fff;
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      padding: 1em;
+      padding: 1.5em;
       display: flex;
       flex-direction: column;
       align-items: center;
+      text-align: center;
     }
 
     .preview-item img {
       max-width: 100%;
-      max-height: 150px;
-      margin-bottom: 10px;
+      height: auto;
+      max-height: 200px;
       border-radius: 8px;
     }
 
+    .dim-display {
+      font-size: 0.85em;
+      color: #555;
+      margin-top: 15px;
+    }
+
+    .size-display {
+      font-weight: bold;
+      font-size: 0.9em;
+      margin-top: 5px;
+      margin-bottom: 10px;
+    }
+
+    .size-display.good {
+      color: #2e7d32;
+    }
+
+    .size-display.bad {
+      color: #d32f2f;
+    }
+
     a.button.download {
-      background-color: #2196f3;
+      background-color: #1976d2;
       text-decoration: none;
+      width: 100%;
+      box-sizing: border-box;
+      display: block;
+      margin-top: auto;
     }
 
     a.button.download:hover {
-      background-color: #1976d2;
+      background-color: #1565c0;
+    }
+
+    @media (max-width: 768px) {
+      #top-container {
+        flex-direction: column;
+      }
     }
   </style>
 </head>
 <body>
 
-<header>Nims PNG to WEBP Converter</header>
+<header>Let's Convert!</header>
 
-<div id="drop-area">
-  <p><strong>Drag & Drop</strong> PNG, JPG, or ZIP files here</p>
-  <input type="file" id="fileElem" accept=".png,.jpg,.jpeg,.zip" multiple style="display:none">
-  <button class="button" onclick="document.getElementById('fileElem').click()">Choose Files</button>
+<div id="top-container">
+  <div id="drop-area">
+    <p><strong>Drag & Drop</strong> PNG, JPG, WEBP, or ZIP files here</p>
+    <input type="file" id="fileElem" accept=".png,.jpg,.jpeg,.webp,.zip" multiple style="display:none">
+    <button class="button" onclick="document.getElementById('fileElem').click()">Choose Files</button>
+  </div>
+
+  <div id="global-controls">
+    <div class="control-group">
+      <label>Output Format</label>
+      <select id="global-format">
+        <option value="image/webp" selected>WEBP</option>
+        <option value="image/jpeg">JPG</option>
+        <option value="image/png">PNG</option>
+      </select>
+    </div>
+    <div class="control-group" style="margin-top: 15px;">
+      <label>Quality: <span id="global-quality-val">90</span>%</label>
+      <input type="range" id="global-quality" min="0.1" max="1.0" step="0.01" value="0.90">
+    </div>
+    <div class="control-group" style="margin-top: 15px;">
+      <label>Scale: <span id="global-scale-val">100</span>%</label>
+      <input type="range" id="global-scale" min="1" max="100" step="1" value="100">
+    </div>
+  </div>
 </div>
 
 <div id="gallery"></div>
@@ -104,8 +205,13 @@
 <script>
   const dropArea = document.getElementById('drop-area');
   const gallery = document.getElementById('gallery');
-  const webpQuality = 0.95; // ✅ Fixed high-quality setting
-  let allImages = [];
+  const globalFormat = document.getElementById('global-format');
+  const globalQuality = document.getElementById('global-quality');
+  const globalQualityVal = document.getElementById('global-quality-val');
+  const globalScale = document.getElementById('global-scale');
+  const globalScaleVal = document.getElementById('global-scale-val');
+
+  let processedImages = [];
 
   ['dragenter', 'dragover'].forEach(eventName => {
     dropArea.addEventListener(eventName, () => dropArea.classList.add('highlight'), false);
@@ -133,38 +239,51 @@
   });
 
   async function handleAllFiles(files) {
-    allImages = [];
+    gallery.innerHTML = '';
+    processedImages.forEach(item => {
+      if (item.blobUrl) URL.revokeObjectURL(item.blobUrl);
+    });
+    processedImages = [];
+
+    let rawFiles = [];
 
     for (const file of files) {
       if (file.name.endsWith('.zip')) {
         const zip = await JSZip.loadAsync(file);
         const entries = [];
         zip.forEach((relativePath, zipEntry) => {
-          if (!zipEntry.dir && /\.(png|jpg|jpeg)$/i.test(zipEntry.name)) {
+          if (!zipEntry.dir && /\.(png|jpg|jpeg|webp)$/i.test(zipEntry.name)) {
             entries.push(zipEntry);
           }
         });
 
         for (const entry of entries) {
           const blob = await entry.async('blob');
-          allImages.push(new File([blob], entry.name, { type: blob.type }));
+          rawFiles.push(new File([blob], entry.name, { type: blob.type }));
         }
-      } else if (/\.(png|jpg|jpeg)$/i.test(file.name)) {
-        allImages.push(file);
+      } else if (/\.(png|jpg|jpeg|webp)$/i.test(file.name)) {
+        rawFiles.push(file);
       }
     }
 
     const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
-    allImages.sort((a, b) => collator.compare(a.name, b.name));
+    rawFiles.sort((a, b) => collator.compare(a.name, b.name));
 
-    gallery.innerHTML = ''; // Clear previous
-
-    for (const image of allImages) {
-      await convertImage(image.name, image);
+    for (const file of rawFiles) {
+      await processFile(file);
     }
   }
 
-  function convertImage(originalName, file) {
+  function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  }
+
+  function processFile(file) {
     return new Promise(resolve => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -172,36 +291,117 @@
         const img = new Image();
         img.src = reader.result;
         img.onload = () => {
+          
           const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0);
-          canvas.toBlob(blob => {
-            const webpName = originalName.replace(/\.(png|jpg|jpeg)$/i, '.webp');
-            const webpURL = URL.createObjectURL(blob);
-            const preview = new Image();
-            preview.src = canvas.toDataURL('image/webp');
-            preview.alt = webpName;
 
-            const container = document.createElement('div');
-            container.className = 'preview-item';
+          const container = document.createElement('div');
+          container.className = 'preview-item';
 
-            const link = document.createElement('a');
-            link.href = webpURL;
-            link.download = webpName;
-            link.className = 'button download';
-            link.textContent = `Download: ${webpName}`;
+          const previewImg = new Image();
+          container.appendChild(previewImg);
 
-            container.appendChild(preview);
-            container.appendChild(link);
-            gallery.appendChild(container);
-            resolve();
-          }, 'image/webp', webpQuality);
+          const dimDisplay = document.createElement('div');
+          dimDisplay.className = 'dim-display';
+          container.appendChild(dimDisplay);
+
+          const sizeDisplay = document.createElement('div');
+          sizeDisplay.className = 'size-display';
+          container.appendChild(sizeDisplay);
+
+          const downloadLink = document.createElement('a');
+          downloadLink.className = 'button download';
+          downloadLink.textContent = 'Download Image';
+          container.appendChild(downloadLink);
+
+          gallery.appendChild(container);
+
+          const itemData = {
+            file: file,
+            originalName: file.name,
+            originalImg: img, 
+            originalWidth: img.width,
+            originalHeight: img.height,
+            canvas: canvas,
+            imgElement: previewImg,
+            dimElement: dimDisplay,
+            sizeElement: sizeDisplay,
+            linkElement: downloadLink,
+            blobUrl: null
+          };
+
+          processedImages.push(itemData);
+          runConversion(itemData);
+          resolve();
         };
       };
     });
   }
+
+  function runConversion(item) {
+    const format = globalFormat.value;
+    const quality = parseFloat(globalQuality.value);
+    const scale = parseInt(globalScale.value) / 100;
+
+    const newWidth = Math.max(1, Math.round(item.originalWidth * scale));
+    const newHeight = Math.max(1, Math.round(item.originalHeight * scale));
+
+    item.canvas.width = newWidth;
+    item.canvas.height = newHeight;
+    const ctx = item.canvas.getContext('2d');
+    
+    ctx.drawImage(item.originalImg, 0, 0, newWidth, newHeight);
+
+    item.dimElement.textContent = `Dimensions: ${newWidth} x ${newHeight} px`;
+
+    item.canvas.toBlob(blob => {
+      if (item.blobUrl) {
+        URL.revokeObjectURL(item.blobUrl);
+      }
+      item.blobUrl = URL.createObjectURL(blob);
+      item.imgElement.src = item.blobUrl;
+
+      const sizeInKb = blob.size / 1024;
+      item.sizeElement.textContent = `Size: ${formatBytes(blob.size)}`;
+      
+      if (sizeInKb <= 200) {
+        item.sizeElement.classList.add('good');
+        item.sizeElement.classList.remove('bad');
+      } else {
+        item.sizeElement.classList.add('bad');
+        item.sizeElement.classList.remove('good');
+      }
+
+      let ext = format.split('/')[1];
+      if (ext === 'jpeg') ext = 'jpg';
+      let finalName = item.originalName.replace(/\.[^/.]+$/, "") + '.' + ext;
+
+      item.linkElement.href = item.blobUrl;
+      item.linkElement.download = finalName;
+
+    }, format, quality);
+  }
+
+  function updateAll() {
+    const format = globalFormat.value;
+    const quality = parseFloat(globalQuality.value);
+    const scale = parseInt(globalScale.value);
+    
+    globalQualityVal.textContent = Math.round(quality * 100);
+    globalScaleVal.textContent = scale;
+
+    if (format === 'image/png') {
+      globalQuality.disabled = true;
+    } else {
+      globalQuality.disabled = false;
+    }
+
+    processedImages.forEach(item => runConversion(item));
+  }
+
+  globalFormat.addEventListener('change', updateAll);
+  globalQuality.addEventListener('input', updateAll);
+  globalScale.addEventListener('input', updateAll);
+
 </script>
 
 </body>

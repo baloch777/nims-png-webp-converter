@@ -311,10 +311,27 @@
       if (isHeic) {
         const container = document.createElement('div');
         container.className = 'preview-item';
-        container.innerHTML = '<div class="loading-text">Processing HEIC...<br><span style="font-size:0.8em;font-weight:normal;color:#555;">This takes 5 to 10 seconds per image. Please wait.</span></div>';
+        
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'loading-text';
+        loadingDiv.innerHTML = 'Processing HEIC...<br><span style="font-size:0.8em;font-weight:normal;color:#555;">Estimated time: <span class="countdown-timer" style="font-weight:bold;">10</span> seconds. Please wait.</span>';
+        
+        container.appendChild(loadingDiv);
         gallery.appendChild(container);
 
-        // Force the MIME type to prevent the browser from stripping it and confusing the decoder
+        const countdownSpan = loadingDiv.querySelector('.countdown-timer');
+        let timeLeft = 10;
+        
+        const timerInterval = setInterval(() => {
+          timeLeft--;
+          if (timeLeft > 0) {
+            countdownSpan.textContent = timeLeft;
+          } else {
+            countdownSpan.textContent = "almost done...";
+            countdownSpan.nextSibling.textContent = ""; 
+          }
+        }, 1000);
+
         const cleanBlob = new Blob([file], { type: "image/heic" });
 
         setTimeout(() => {
@@ -323,11 +340,13 @@
             type: "image/jpeg",
             quality: 0.9
           }).then(convertedBlob => {
+            clearInterval(timerInterval);
             container.innerHTML = '';
             const singleBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
             const fileToProcess = new File([singleBlob], file.name.replace(/\.(heic|heif)$/i, ".jpg"), { type: "image/jpeg" });
             continueProcessing(fileToProcess, file.name, container);
           }).catch(error => {
+            clearInterval(timerInterval);
             let errorMessage = error && error.message ? error.message : String(error);
             container.innerHTML = '<div class="error-text"><strong>System Error Details:</strong><br>' + errorMessage + '<br><br><strong>Why this happened:</strong> This image uses a proprietary Apple encoding (like iOS 18 HDR, a Live Photo sequence, or Spatial Video). Open-source web browsers currently do not have the legal rights or engine updates required to read this specific format locally.</div>';
             console.error("HEIC conversion error:", error);

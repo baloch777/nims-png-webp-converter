@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Let's Convert!</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -162,6 +163,23 @@
       background-color: #1565c0;
     }
 
+    .loading-text {
+      color: #0d47a1;
+      font-weight: bold;
+      font-size: 1.1em;
+      margin: auto;
+      padding: 20px;
+    }
+
+    .error-text {
+      color: #d32f2f;
+      font-size: 0.9em;
+      text-align: left;
+      padding: 15px;
+      background: #ffebee;
+      border-radius: 8px;
+    }
+
     @media (max-width: 768px) {
       #top-container {
         flex-direction: column;
@@ -175,8 +193,8 @@
 
 <div id="top-container">
   <div id="drop-area">
-    <p><strong>Drag & Drop</strong> PNG, JPG, WEBP, or ZIP files here</p>
-    <input type="file" id="fileElem" accept=".png,.jpg,.jpeg,.webp,.zip" multiple style="display:none">
+    <p><strong>Drag & Drop</strong> PNG, JPG, WEBP, HEIC, or ZIP files here</p>
+    <input type="file" id="fileElem" accept=".png,.jpg,.jpeg,.webp,.heic,.heif,.zip" multiple style="display:none">
     <button class="button" onclick="document.getElementById('fileElem').click()">Choose Files</button>
   </div>
 
@@ -252,7 +270,7 @@
         const zip = await JSZip.loadAsync(file);
         const entries = [];
         zip.forEach((relativePath, zipEntry) => {
-          if (!zipEntry.dir && /\.(png|jpg|jpeg|webp)$/i.test(zipEntry.name)) {
+          if (!zipEntry.dir && /\.(png|jpg|jpeg|webp|heic|heif)$/i.test(zipEntry.name)) {
             entries.push(zipEntry);
           }
         });
@@ -261,7 +279,7 @@
           const blob = await entry.async('blob');
           rawFiles.push(new File([blob], entry.name, { type: blob.type }));
         }
-      } else if (/\.(png|jpg|jpeg|webp)$/i.test(file.name)) {
+      } else if (/\.(png|jpg|jpeg|webp|heic|heif)$/i.test(file.name)) {
         rawFiles.push(file);
       }
     }
@@ -285,55 +303,83 @@
 
   function processFile(file) {
     return new Promise(resolve => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onloadend = () => {
-        const img = new Image();
-        img.src = reader.result;
-        img.onload = () => {
-          
-          const canvas = document.createElement('canvas');
+      const isHeic = /\.(heic|heif)$/i.test(file.name);
 
-          const container = document.createElement('div');
-          container.className = 'preview-item';
+      if (isHeic) {
+        const container = document.createElement('div');
+        container.className = 'preview-item';
+        container.innerHTML = '<div class="loading-text">Processing HEIC...<br><span style="font-size:0.8em;font-weight:normal;color:#555;">This takes 5 to 10 seconds per image. Please wait.</span></div>';
+        gallery.appendChild(container);
 
-          const previewImg = new Image();
-          container.appendChild(previewImg);
+        setTimeout(() => {
+          heic2any({
+            blob: file,
+            toType: "image/jpeg",
+            quality: 0.9
+          }).then(convertedBlob => {
+            container.innerHTML = '';
+            const singleBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+            const fileToProcess = new File([singleBlob], file.name.replace(/\.(heic|heif)$/i, ".jpg"), { type: "image/jpeg" });
+            continueProcessing(fileToProcess, file.name, container);
+          }).catch(error => {
+            container.innerHTML = '<div class="error-text"><strong>Error converting HEIC:</strong><br>If you opened this tool directly from a folder on your computer (a file:// address), your browser blocked the conversion. You must test this tool on a live web server or open the HTML file using Mozilla Firefox.</div>';
+            console.error("HEIC conversion error:", error);
+            resolve();
+          });
+        }, 100);
+      } else {
+        const container = document.createElement('div');
+        container.className = 'preview-item';
+        gallery.appendChild(container);
+        continueProcessing(file, file.name, container);
+      }
 
-          const dimDisplay = document.createElement('div');
-          dimDisplay.className = 'dim-display';
-          container.appendChild(dimDisplay);
+      function continueProcessing(targetFile, originalName, containerElement) {
+        const reader = new FileReader();
+        reader.readAsDataURL(targetFile);
+        reader.onloadend = () => {
+          const img = new Image();
+          img.src = reader.result;
+          img.onload = () => {
+            
+            const canvas = document.createElement('canvas');
 
-          const sizeDisplay = document.createElement('div');
-          sizeDisplay.className = 'size-display';
-          container.appendChild(sizeDisplay);
+            const previewImg = new Image();
+            containerElement.appendChild(previewImg);
 
-          const downloadLink = document.createElement('a');
-          downloadLink.className = 'button download';
-          downloadLink.textContent = 'Download Image';
-          container.appendChild(downloadLink);
+            const dimDisplay = document.createElement('div');
+            dimDisplay.className = 'dim-display';
+            containerElement.appendChild(dimDisplay);
 
-          gallery.appendChild(container);
+            const sizeDisplay = document.createElement('div');
+            sizeDisplay.className = 'size-display';
+            containerElement.appendChild(sizeDisplay);
 
-          const itemData = {
-            file: file,
-            originalName: file.name,
-            originalImg: img, 
-            originalWidth: img.width,
-            originalHeight: img.height,
-            canvas: canvas,
-            imgElement: previewImg,
-            dimElement: dimDisplay,
-            sizeElement: sizeDisplay,
-            linkElement: downloadLink,
-            blobUrl: null
+            const downloadLink = document.createElement('a');
+            downloadLink.className = 'button download';
+            downloadLink.textContent = 'Download Image';
+            containerElement.appendChild(downloadLink);
+
+            const itemData = {
+              file: targetFile,
+              originalName: originalName,
+              originalImg: img, 
+              originalWidth: img.width,
+              originalHeight: img.height,
+              canvas: canvas,
+              imgElement: previewImg,
+              dimElement: dimDisplay,
+              sizeElement: sizeDisplay,
+              linkElement: downloadLink,
+              blobUrl: null
+            };
+
+            processedImages.push(itemData);
+            runConversion(itemData);
+            resolve();
           };
-
-          processedImages.push(itemData);
-          runConversion(itemData);
-          resolve();
         };
-      };
+      }
     });
   }
 

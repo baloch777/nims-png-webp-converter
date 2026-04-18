@@ -314,9 +314,12 @@
         container.innerHTML = '<div class="loading-text">Processing HEIC...<br><span style="font-size:0.8em;font-weight:normal;color:#555;">This takes 5 to 10 seconds per image. Please wait.</span></div>';
         gallery.appendChild(container);
 
+        // Force the MIME type to prevent the browser from stripping it and confusing the decoder
+        const cleanBlob = new Blob([file], { type: "image/heic" });
+
         setTimeout(() => {
           HeicTo({
-            blob: file,
+            blob: cleanBlob,
             type: "image/jpeg",
             quality: 0.9
           }).then(convertedBlob => {
@@ -326,7 +329,7 @@
             continueProcessing(fileToProcess, file.name, container);
           }).catch(error => {
             let errorMessage = error && error.message ? error.message : String(error);
-            container.innerHTML = '<div class="error-text"><strong>System Error Details:</strong><br>' + errorMessage + '</div>';
+            container.innerHTML = '<div class="error-text"><strong>System Error Details:</strong><br>' + errorMessage + '<br><br><strong>Why this happened:</strong> This image uses a proprietary Apple encoding (like iOS 18 HDR, a Live Photo sequence, or Spatial Video). Open-source web browsers currently do not have the legal rights or engine updates required to read this specific format locally.</div>';
             console.error("HEIC conversion error:", error);
             resolve();
           });

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Let's Convert!</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/heic-to@1.4.2/dist/iife/heic-to.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -315,9 +315,9 @@
         gallery.appendChild(container);
 
         setTimeout(() => {
-          heic2any({
+          HeicTo({
             blob: file,
-            toType: "image/jpeg",
+            type: "image/jpeg",
             quality: 0.9
           }).then(convertedBlob => {
             container.innerHTML = '';
